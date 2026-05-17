@@ -21,12 +21,30 @@ def train(num_steps=300_000,
           env_kwargs=None,
           q_kwargs_a=None,
           q_kwargs_b=None,
-          verbose=True):
+          verbose=True,
+          learners=None,
+          frozen_types=()):
+    """Joint training loop.
+
+    learners: optional pre-built {TYPE_A: QLearner, TYPE_B: QLearner}. If
+        provided, q_kwargs_* are ignored and the existing tables continue.
+    frozen_types: iterable of type strings whose Q-tables are NOT updated.
+        Frozen agents still act epsilon-greedily from their (fixed) Q-table.
+        Use e.g. frozen_types=(TYPE_A,) for phase 2 of sequential training.
+    """
     env = Env(**(env_kwargs or {}))
-    learners = {
-        TYPE_A: QLearner(**(q_kwargs_a or {})),
-        TYPE_B: QLearner(**(q_kwargs_b or {})),
-    }
+    if learners is None:
+        learners = {
+            TYPE_A: QLearner(**(q_kwargs_a or {})),
+            TYPE_B: QLearner(**(q_kwargs_b or {})),
+        }
+    frozen_types = set(frozen_types)
+    # Force frozen agents to act greedily (no exploration) so they behave as a
+    # fixed, deterministic environment for the learner(s).
+    for t in frozen_types:
+        learners[t].eps = 0.0
+        learners[t].eps_min = 0.0
+        learners[t]._eps_start = 0.0
 
     def policy(robot, obs):
         return learners[robot.type].act(obs)
@@ -79,7 +97,8 @@ def train(num_steps=300_000,
         n_deliv_A = 0
         n_deliv_B = 0
         for tr in transitions:
-            learners[tr["type"]].update(tr["s"], tr["a"], tr["r"], tr["s_next"], tr["done"])
+            if tr["type"] not in frozen_types:
+                learners[tr["type"]].update(tr["s"], tr["a"], tr["r"], tr["s_next"], tr["done"])
             rid = tr["id"]
             robot_return[rid] += tr["r"]
             robot_steps[rid] += 1
@@ -113,7 +132,9 @@ def train(num_steps=300_000,
         win["deliveries_A"].append(n_deliv_A)
         win["deliveries_B"].append(n_deliv_B)
 
-        for lr in learners.values():
+        for t, lr in learners.items():
+            if t in frozen_types:
+                continue
             lr.step_eps()
 
         if step % log_window == 0:

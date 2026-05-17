@@ -84,7 +84,8 @@ class Env:
                  r_collision=-20,
                  r_water=-20,
                  r_pickup=10,
-                 r_deliver=50):
+                 r_deliver=50,
+                 enabled_types=(TYPE_A, TYPE_B)):
         self.p_lake_flip = p_lake_flip
         self.spawn_prob = spawn_prob
         self.r_step = r_step
@@ -93,6 +94,9 @@ class Env:
         self.r_water = r_water
         self.r_pickup = r_pickup
         self.r_deliver = r_deliver
+        # Which agent types actually get spawned. Phase 1 of sequential
+        # training uses (TYPE_A,) so B never appears in the env.
+        self.enabled_types = tuple(enabled_types)
         self.reset()
 
     def reset(self):
@@ -108,11 +112,11 @@ class Env:
         # Robots are deployed at random times from each ship (continuous stream).
         # Only spawn if the home cell is free, so newly spawned robots don't
         # immediately collide with one still standing on it.
-        if self._home_free(TYPE_A) and random.random() < self.spawn_prob:
+        if TYPE_A in self.enabled_types and self._home_free(TYPE_A) and random.random() < self.spawn_prob:
             r = Robot(TYPE_A)
             r.born_step = self.t
             self.robots.append(r)
-        if self._home_free(TYPE_B) and random.random() < self.spawn_prob:
+        if TYPE_B in self.enabled_types and self._home_free(TYPE_B) and random.random() < self.spawn_prob:
             r = Robot(TYPE_B)
             r.born_step = self.t
             self.robots.append(r)
