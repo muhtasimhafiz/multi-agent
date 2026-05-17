@@ -1,4 +1,4 @@
-"""Short-budget variant: 10k+10k+50k+100k = 170k total steps."""
+"""Short-budget variant: 5k+5k+60k+100k = 170k total steps."""
 
 import time
 import random
@@ -55,26 +55,26 @@ def main():
 
     learners = {
         TYPE_A: QLearner(q_init=0.0, alpha=0.15, alpha_min=0.15, alpha_decay_steps=1,
-                         gamma=0.95, eps=1.0, eps_min=0.01, eps_decay_steps=10_000),
+                         gamma=0.95, eps=1.0, eps_min=0.01, eps_decay_steps=5_000),
         TYPE_B: QLearner(q_init=0.0, alpha=0.15, alpha_min=0.15, alpha_decay_steps=1,
-                         gamma=0.95, eps=1.0, eps_min=0.01, eps_decay_steps=10_000),
+                         gamma=0.95, eps=1.0, eps_min=0.01, eps_decay_steps=5_000),
     }
 
-    print('STAGE 1: A solo, 10k steps, alpha=0.15')
-    _ = train(num_steps=10_000, log_window=2_500,
+    print('STAGE 1: A solo, 5k steps, alpha=0.15')
+    _ = train(num_steps=5_000, log_window=1_000,
           env_kwargs={**base, 'enabled_types': (TYPE_A,), 'target_active': 1},
           learners=learners, verbose=True)
 
-    print('\nSTAGE 2: B solo, 10k steps, alpha=0.15')
-    reset(learners[TYPE_B], 0.15, 1.0, 0.01, 10_000)
-    _ = train(num_steps=10_000, log_window=2_500,
+    print('\nSTAGE 2: B solo, 5k steps, alpha=0.15')
+    reset(learners[TYPE_B], 0.15, 1.0, 0.01, 5_000)
+    _ = train(num_steps=5_000, log_window=1_000,
           env_kwargs={**base, 'enabled_types': (TYPE_B,), 'target_active': 1},
           learners=learners, verbose=True)
 
-    print('\nSTAGE 3: joint, 50k steps, target_active=4, alpha=0.05')
+    print('\nSTAGE 3: joint, 60k steps, target_active=4, alpha=0.05')
     for t in (TYPE_A, TYPE_B):
-        reset(learners[t], 0.05, 0.5, 0.01, 50_000)
-    _ = train(num_steps=50_000, log_window=10_000,
+        reset(learners[t], 0.05, 0.5, 0.01, 60_000)
+    _ = train(num_steps=60_000, log_window=10_000,
           env_kwargs={**base, 'enabled_types': (TYPE_A, TYPE_B), 'target_active': 4},
           learners=learners, verbose=True)
 
