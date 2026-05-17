@@ -150,12 +150,13 @@ def train(num_steps=300_000,
 
             if verbose:
                 print(f"step={step:>7d}  eps={learners[TYPE_A].eps:.3f}  "
+                      f"a={learners[TYPE_A].alpha:.3f}  "
                       f"coll/step={coll_rate:.4f}  "
-                      f"A-in-flood/step={water_rate:.4f}  "
-                      f"deliv/step A={dA:.3f} B={dB:.3f}  "
+                      f"A-in-flood={water_rate:.4f}  "
+                      f"deliv A={dA:.3f} B={dB:.3f}  "
                       f"avg_steps A={avg_stp_A:.2f} B={avg_stp_B:.2f}  "
                       f"avg_return A={avg_ret_A:.2f} B={avg_ret_B:.2f}  "
-                      f"A-dry-share={A_share:.2f} B-flood-share={B_share:.2f}")
+                      f"A-dry={A_share:.2f} B-flood={B_share:.2f}")
 
     return env, learners, history
 
