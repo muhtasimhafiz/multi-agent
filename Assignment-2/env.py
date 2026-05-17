@@ -85,7 +85,8 @@ class Env:
                  r_water=-20,
                  r_pickup=10,
                  r_deliver=50,
-                 enabled_types=(TYPE_A, TYPE_B)):
+                 enabled_types=(TYPE_A, TYPE_B),
+                 target_active=None):
         self.p_lake_flip = p_lake_flip
         self.spawn_prob = spawn_prob
         self.r_step = r_step
@@ -94,9 +95,13 @@ class Env:
         self.r_water = r_water
         self.r_pickup = r_pickup
         self.r_deliver = r_deliver
-        # Which agent types actually get spawned. Phase 1 of sequential
-        # training uses (TYPE_A,) so B never appears in the env.
+        # Which agent types actually get spawned.
         self.enabled_types = tuple(enabled_types)
+        # If target_active is set (e.g. 4), the env tries to maintain that
+        # many active robots of each enabled type by spawning whenever home
+        # is free and the count is below target. spawn_prob is ignored in
+        # this mode. This produces a denser, collision-prone stream.
+        self.target_active = target_active
         self.reset()
 
     def reset(self):
@@ -108,18 +113,32 @@ class Env:
         h = home_of(agent_type)
         return all(r.pos != h for r in self.robots)
 
+    def _active_count(self, agent_type):
+        return sum(1 for r in self.robots if r.type == agent_type)
+
+    def _try_spawn(self, agent_type):
+        if agent_type not in self.enabled_types:
+            return
+        if not self._home_free(agent_type):
+            return
+        if self.target_active is not None:
+            # Deterministic spawn-to-target: spawn iff below target.
+            if self._active_count(agent_type) >= self.target_active:
+                return
+        else:
+            # Probabilistic spawn (original continuous-stream behaviour).
+            if random.random() >= self.spawn_prob:
+                return
+        r = Robot(agent_type)
+        r.born_step = self.t
+        self.robots.append(r)
+
     def maybe_spawn(self):
         # Robots are deployed at random times from each ship (continuous stream).
         # Only spawn if the home cell is free, so newly spawned robots don't
         # immediately collide with one still standing on it.
-        if TYPE_A in self.enabled_types and self._home_free(TYPE_A) and random.random() < self.spawn_prob:
-            r = Robot(TYPE_A)
-            r.born_step = self.t
-            self.robots.append(r)
-        if TYPE_B in self.enabled_types and self._home_free(TYPE_B) and random.random() < self.spawn_prob:
-            r = Robot(TYPE_B)
-            r.born_step = self.t
-            self.robots.append(r)
+        self._try_spawn(TYPE_A)
+        self._try_spawn(TYPE_B)
 
     def tick(self, policy):
         """Advance one global timestep.
