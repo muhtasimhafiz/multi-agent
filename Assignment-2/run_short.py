@@ -71,9 +71,9 @@ def main():
           env_kwargs={**base, 'enabled_types': (TYPE_B,), 'target_active': 1},
           learners=learners, verbose=True)
 
-    print('\nSTAGE 3: joint, 60k steps, target_active=4, alpha=0.05')
+    print('\nSTAGE 3: joint, 60k steps, target_active=4, alpha=0.08')
     for t in (TYPE_A, TYPE_B):
-        reset(learners[t], 0.05, 0.5, 0.01, 60_000)
+        reset(learners[t], 0.08, 0.5, 0.01, 60_000)
     _ = train(num_steps=60_000, log_window=10_000,
           env_kwargs={**base, 'enabled_types': (TYPE_A, TYPE_B), 'target_active': 4},
           learners=learners, verbose=True)
