@@ -1,4 +1,4 @@
-"""Short-budget variant: 5k+5k+60k+100k = 170k total steps."""
+"""Short-budget variant: 5k+5k+100k+100k = 210k total steps."""
 
 import time
 import random
@@ -71,10 +71,10 @@ def main():
           env_kwargs={**base, 'enabled_types': (TYPE_B,), 'target_active': 1},
           learners=learners, verbose=True)
 
-    print('\nSTAGE 3: joint, 60k steps, target_active=4, alpha=0.08')
+    print('\nSTAGE 3: joint, 100k steps, target_active=4, alpha=0.05')
     for t in (TYPE_A, TYPE_B):
-        reset(learners[t], 0.08, 0.5, 0.01, 60_000)
-    _ = train(num_steps=60_000, log_window=10_000,
+        reset(learners[t], 0.05, 0.5, 0.01, 100_000)
+    _ = train(num_steps=100_000, log_window=20_000,
           env_kwargs={**base, 'enabled_types': (TYPE_A, TYPE_B), 'target_active': 4},
           learners=learners, verbose=True)
 
