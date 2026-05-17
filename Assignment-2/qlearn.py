@@ -18,8 +18,12 @@ from env import NUM_ACTIONS
 class QLearner:
     def __init__(self, alpha=0.1, gamma=0.95,
                  eps=1.0, eps_min=0.05, eps_decay_steps=150_000,
-                 alpha_min=None, alpha_decay_steps=None):
-        self.Q = defaultdict(lambda: [0.0] * NUM_ACTIONS)
+                 alpha_min=None, alpha_decay_steps=None,
+                 q_init=0.0):
+        # Optimistic init: q_init=+50 makes every unvisited (s,a) look better
+        # than visited ones, forcing exhaustive exploration before commitment.
+        self._q_init = q_init
+        self.Q = defaultdict(lambda: [self._q_init] * NUM_ACTIONS)
         self.alpha = alpha
         self.gamma = gamma
         self.eps = eps
